@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{layout/base :: header_head('Nuevo Producto')}">
+    <title>Nuevo Producto - Inventario</title>
+</head>
+<body>
+
+    <!-- Barra de Navegación -->
+    <nav th:replace="~{layout/base :: navbar}"></nav>
+
+    <!-- Contenido Principal -->
+    <main class="container-fluid px-4 py-4 main-content">
+        
+        <!-- Alertas Flash -->
+        <div th:replace="~{layout/base :: alerts}"></div>
+
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-md-10">
+
+                <div class="d-flex align-items-center justify-content-between mb-4">
+                    <div>
+                        <h2 class="fw-bold text-dark mb-1">
+                            <i class="bi bi-plus-circle text-primary me-2"></i> Registrar Nuevo Producto
+                        </h2>
+                        <p class="text-muted mb-0">Ingrese los datos para dar de alta un producto en el catálogo general.</p>
+                    </div>
+                    <a th:href="@{/inventario}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i> Volver al Inventario
+                    </a>
+                </div>
+
+                <!-- Regla de Negocio Informativa -->
+                <div class="alert alert-info d-flex align-items-center mb-4 shadow-sm border-info" role="alert">
+                    <i class="bi bi-info-circle-fill fs-4 me-3 text-info"></i>
+                    <div>
+                        <strong>Regla de Inventario:</strong> Al dar de alta un nuevo producto, 
+                        su <u>cantidad inicial en inventario será automáticamente 0</u>. 
+                        Posteriormente, podrá ingresar existencias mediante el módulo de <strong>Entrada de Productos</strong>.
+                    </div>
+                </div>
+
+                <!-- Formulario de Registro -->
+                <div class="card shadow-sm">
+                    <div class="card-body p-4 p-md-5">
+                        <form th:action="@{/inventario/guardar}" th:object="${productoDto}" method="post">
+                            
+                            <div class="row g-3">
+                                <!-- Código / SKU -->
+                                <div class="col-md-6">
+                                    <label for="codigo" class="form-label fw-semibold">
+                                        Código / SKU del Producto <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-upc-scan"></i></span>
+                                        <input type="text" 
+                                               class="form-control" 
+                                               id="codigo" 
+                                               th:field="*{codigo}" 
+                                               placeholder="Ej. LAP-1001" 
+                                               th:classappend="${#fields.hasErrors('codigo')} ? 'is-invalid' : ''"
+                                               required>
+                                    </div>
+                                    <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('codigo')}" th:errors="*{codigo}">
+                                        Código inválido
+                                    </div>
+                                </div>
+
+                                <!-- Categoría -->
+                                <div class="col-md-6">
+                                    <label for="categoria" class="form-label fw-semibold">
+                                        Categoría <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-tag"></i></span>
+                                        <input type="text" 
+                                               class="form-control" 
+                                               id="categoria" 
+                                               th:field="*{categoria}" 
+                                               placeholder="Ej. Cómputo, Accesorios, Redes" 
+                                               th:classappend="${#fields.hasErrors('categoria')} ? 'is-invalid' : ''"
+                                               required>
+                                    </div>
+                                    <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('categoria')}" th:errors="*{categoria}">
+                                        Categoría obligatoria
+                                    </div>
+                                </div>
+
+                                <!-- Nombre del Producto -->
+                                <div class="col-12">
+                                    <label for="nombre" class="form-label fw-semibold">
+                                        Nombre del Producto <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-card-heading"></i></span>
+                                        <input type="text" 
+                                               class="form-control" 
+                                               id="nombre" 
+                                               th:field="*{nombre}" 
+                                               placeholder="Ej. Teclado Mecánico Inalámbrico" 
+                                               th:classappend="${#fields.hasErrors('nombre')} ? 'is-invalid' : ''"
+                                               required>
+                                    </div>
+                                    <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('nombre')}" th:errors="*{nombre}">
+                                        Nombre obligatorio
+                                    </div>
+                                </div>
+
+                                <!-- Descripción -->
+                                <div class="col-12">
+                                    <label for="descripcion" class="form-label fw-semibold">Descripción Detallada</label>
+                                    <textarea class="form-control" 
+                                              id="descripcion" 
+                                              th:field="*{descripcion}" 
+                                              rows="3" 
+                                              placeholder="Especificaciones técnicas, marca, modelo o notas adicionales..."></textarea>
+                                    <div class="invalid-feedback d-block" th:if="${#fields.hasErrors('descripcion')}" th:errors="*{descripcion}">
+                                        Descripción inválida
+                                    </div>
+                                </div>
+
+                                <!-- Campo Informativo de Stock Inicial Bloqueado en 0 -->
+                                <div class="col-12">
+                                    <div class="p-3 bg-light rounded-3 border">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <div class="fw-semibold text-secondary">Stock Inicial por Defecto:</div>
+                                                <small class="text-muted">Asignado automáticamente por el sistema al crearse.</small>
+                                            </div>
+                                            <span class="badge bg-secondary fs-6 px-3 py-2">0 unidades</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="my-4">
+
+                            <div class="d-flex justify-content-end gap-2">
+                                <a th:href="@{/inventario}" class="btn btn-outline-secondary px-4">
+                                    Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-primary btn-primary-custom px-4">
+                                    <i class="bi bi-check-circle-fill me-1"></i> Guardar Producto
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Pie de Página y Scripts -->
+    <footer th:replace="~{layout/base :: footer}"></footer>
+    <div th:replace="~{layout/base :: scripts}"></div>
+
+</body>
+</html>

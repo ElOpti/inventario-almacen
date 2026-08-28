@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" 
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{layout/base :: header_head('Inventario de Productos')}">
+    <title>Inventario de Productos</title>
+</head>
+<body>
+
+    <!-- Barra de Navegación -->
+    <nav th:replace="~{layout/base :: navbar}"></nav>
+
+    <!-- Contenido Principal -->
+    <main class="container-fluid px-4 py-4 main-content">
+        
+        <!-- Alertas Flash -->
+        <div th:replace="~{layout/base :: alerts}"></div>
+
+        <!-- Encabezado de la Sección -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+            <div>
+                <h2 class="fw-bold text-dark mb-1">
+                    <i class="bi bi-boxes text-primary me-2"></i> Inventario de Productos
+                </h2>
+                <p class="text-muted mb-0">Control de existencias, catálogo de productos y administración de inventario.</p>
+            </div>
+
+            <!-- Botón Agregar Nuevo Producto: Exclusivo para ADMINISTRADOR -->
+            <div sec:authorize="hasAuthority('ROLE_ADMINISTRADOR')">
+                <a th:href="@{/inventario/nuevo}" class="btn btn-primary btn-primary-custom shadow-sm px-3 py-2">
+                    <i class="bi bi-plus-circle-fill me-1"></i> Agregar Nuevo Producto
+                </a>
+            </div>
+        </div>
+
+        <!-- Pestañas / Filtros de Estado -->
+        <div class="card mb-4">
+            <div class="card-body p-3">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2">
+                    <div class="btn-group" role="group" aria-label="Filtros de estado">
+                        <a th:href="@{/inventario(filtro='TODOS')}" 
+                           class="btn btn-sm" 
+                           th:classappend="${filtroActual == 'TODOS'} ? 'btn-dark' : 'btn-outline-secondary'">
+                            <i class="bi bi-grid-fill me-1"></i> Todos
+                        </a>
+                        <a th:href="@{/inventario(filtro='ACTIVOS')}" 
+                           class="btn btn-sm" 
+                           th:classappend="${filtroActual == 'ACTIVOS'} ? 'btn-success' : 'btn-outline-success'">
+                            <i class="bi bi-check-circle me-1"></i> Solo Activos
+                        </a>
+                        <a th:href="@{/inventario(filtro='INACTIVOS')}" 
+                           class="btn btn-sm" 
+                           th:classappend="${filtroActual == 'INACTIVOS'} ? 'btn-danger' : 'btn-outline-danger'">
+                            <i class="bi bi-slash-circle me-1"></i> Dados de Baja (Inactivos)
+                        </a>
+                    </div>
+
+                    <div class="text-muted small">
+                        Mostrando <strong th:text="${#lists.size(productos)}">0</strong> registros
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla Principal de Productos -->
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">Código / SKU</th>
+                                <th>Nombre del Producto</th>
+                                <th>Categoría</th>
+                                <th>Descripción</th>
+                                <th class="text-center">Stock Actual</th>
+                                <th class="text-center">Estado</th>
+                                <!-- Columna Acciones solo para Administrador -->
+                                <th class="text-end pe-4" sec:authorize="hasAuthority('ROLE_ADMINISTRADOR')">Acciones (Admin)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${#lists.isEmpty(productos)}">
+                                <td colspan="7" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary"></i>
+                                    No se encontraron productos registrados con el filtro seleccionado.
+                                </td>
+                            </tr>
+                            <tr th:each="prod : ${productos}">
+                                <td class="ps-4 fw-bold text-primary" th:text="${prod.codigo}">LAP-001</td>
+                                <td class="fw-semibold text-dark" th:text="${prod.nombre}">Nombre de producto</td>
+                                <td>
+                                    <span class="badge bg-light text-dark border" th:text="${prod.categoria}">Categoría</span>
+                                </td>
+                                <td class="text-muted small" style="max-width: 260px;" th:text="${prod.descripcion}">Descripción...</td>
+                                
+                                <!-- Stock Actual -->
+                                <td class="text-center">
+                                    <span class="stock-pill" 
+                                          th:classappend="${prod.stock > 0} ? 'stock-positive' : 'stock-zero'"
+                                          th:text="${prod.stock} + ' un.'">
+                                        0 un.
+                                    </span>
+                                </td>
+
+                                <!-- Estado (Activo / Inactivo) -->
+                                <td class="text-center">
+                                    <span th:if="${prod.isActivo()}" class="badge badge-activo">
+                                        <i class="bi bi-check2-circle me-1"></i> Activo
+                                    </span>
+                                    <span th:unless="${prod.isActivo()}" class="badge badge-inactivo">
+                                        <i class="bi bi-dash-circle me-1"></i> Inactivo
+                                    </span>
+                                </td>
+
+                                <!-- Botones de Acción Exclusivos para Administrador -->
+                                <td class="text-end pe-4" sec:authorize="hasAuthority('ROLE_ADMINISTRADOR')">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        
+                                        <!-- Botón Aumentar Inventario (Entrada) - Solo si está activo -->
+                                        <button th:if="${prod.isActivo()}" 
+                                                type="button" 
+                                                class="btn btn-outline-success"
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#entradaModal"
+                                                th:data-producto-id="${prod.id}"
+                                                th:data-producto-nombre="${prod.nombre}"
+                                                th:data-producto-codigo="${prod.codigo}"
+                                                th:data-producto-stock="${prod.stock}"
+                                                title="Aumentar inventario (Entrada de producto)">
+                                            <i class="bi bi-plus-square me-1"></i> Entrada
+                                        </button>
+
+                                        <!-- Botón Dar de Baja (Si está activo) -->
+                                        <form th:if="${prod.isActivo()}" 
+                                              th:action="@{/inventario/estado/{id}(id=${prod.id})}" 
+                                              method="post" 
+                                              class="d-inline"
+                                              onsubmit="return confirm('¿Está seguro de que desea dar de baja este producto? La baja no lo eliminará, solo cambiará su estatus a Inactivo.');">
+                                            <input type="hidden" name="nuevoEstado" value="INACTIVO"/>
+                                            <button type="submit" class="btn btn-outline-danger" title="Dar de baja producto">
+                                                <i class="bi bi-slash-circle me-1"></i> Dar de baja
+                                            </button>
+                                        </form>
+
+                                        <!-- Botón Reactivar (Si está inactivo) -->
+                                        <form th:unless="${prod.isActivo()}" 
+                                              th:action="@{/inventario/estado/{id}(id=${prod.id})}" 
+                                              method="post" 
+                                              class="d-inline"
+                                              onsubmit="return confirm('¿Desea reactivar este producto para que vuelva a estar disponible?');">
+                                            <input type="hidden" name="nuevoEstado" value="ACTIVO"/>
+                                            <button type="submit" class="btn btn-outline-primary" title="Reactivar producto">
+                                                <i class="bi bi-arrow-clockwise me-1"></i> Reactivar
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para Entrada de Inventario (Aumentar Stock) - Administrador -->
+        <div class="modal fade" id="entradaModal" tabindex="-1" aria-labelledby="entradaModalLabel" aria-hidden="true" sec:authorize="hasAuthority('ROLE_ADMINISTRADOR')">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form th:action="@{/inventario/entrada}" method="post">
+                        <div class="modal-header bg-success text-white">
+                            <h5 class="modal-title fw-bold" id="entradaModalLabel">
+                                <i class="bi bi-plus-circle-fill me-2"></i> Aumentar Inventario (Entrada)
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+
+                        <div class="modal-body p-4">
+                            <input type="hidden" id="modalProductoId" name="productoId" required/>
+
+                            <div class="mb-3 p-3 bg-light rounded-3 border">
+                                <div class="text-secondary small">Producto seleccionado:</div>
+                                <div class="fw-bold text-dark fs-6" id="modalProductoNombre">Cargando...</div>
+                                <div class="text-muted small mt-1">
+                                    Stock actual registrado: <strong class="text-success" id="modalStockActual">0</strong>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="modalCantidad" class="form-label fw-semibold">
+                                    Cantidad a ingresar <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-plus-lg"></i></span>
+                                    <input type="number" 
+                                           class="form-control" 
+                                           id="modalCantidad" 
+                                           name="cantidad" 
+                                           min="1" 
+                                           step="1" 
+                                           placeholder="Ej. 10" 
+                                           required>
+                                </div>
+                                <div class="form-text text-muted">
+                                    Ingrese una cantidad mayor a 0 para incrementar las existencias.
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="modalMotivo" class="form-label fw-semibold">Motivo u Observaciones</label>
+                                <textarea class="form-control" 
+                                          id="modalMotivo" 
+                                          name="motivo" 
+                                          rows="2" 
+                                          placeholder="Ej. Compra a proveedor, factura #1234, reabastecimiento mensual"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer bg-light">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-success px-4">
+                                <i class="bi bi-check2-circle me-1"></i> Registrar Entrada
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Pie de Página y Scripts -->
+    <footer th:replace="~{layout/base :: footer}"></footer>
+    <div th:replace="~{layout/base :: scripts}"></div>
+
+</body>
+</html>

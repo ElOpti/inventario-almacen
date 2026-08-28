@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org" 
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{layout/base :: header_head('Gestión de Usuarios')}">
+    <title>Gestión de Usuarios - Control de Almacén</title>
+</head>
+<body>
+
+    <!-- Barra de Navegación -->
+    <nav th:replace="~{layout/base :: navbar}"></nav>
+
+    <!-- Contenido Principal -->
+    <main class="container-fluid px-4 py-4 main-content">
+        
+        <!-- Alertas Flash -->
+        <div th:replace="~{layout/base :: alerts}"></div>
+
+        <!-- Encabezado del Módulo -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+            <div>
+                <h2 class="fw-bold text-dark mb-1">
+                    <i class="bi bi-people text-primary me-2"></i> Gestión de Usuarios
+                </h2>
+                <p class="text-muted mb-0">Control de cuentas de acceso y asignación de roles de seguridad.</p>
+            </div>
+
+            <!-- Botón Crear Nuevo Usuario -->
+            <div>
+                <a th:href="@{/usuarios/nuevo}" class="btn btn-primary btn-primary-custom shadow-sm px-3 py-2">
+                    <i class="bi bi-person-plus-fill me-1"></i> Crear Nuevo Usuario
+                </a>
+            </div>
+        </div>
+
+        <!-- Tabla de Usuarios -->
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">ID</th>
+                                <th>Usuario</th>
+                                <th>Nombre Completo</th>
+                                <th class="text-center">Rol Asignado</th>
+                                <th class="text-center">Estado</th>
+                                <th>Fecha de Registro</th>
+                                <th class="text-end pe-4">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${#lists.isEmpty(usuarios)}">
+                                <td colspan="7" class="text-center py-5 text-muted">
+                                    <i class="bi bi-person-x fs-1 d-block mb-2 text-secondary"></i>
+                                    No hay usuarios registrados en el sistema.
+                                </td>
+                            </tr>
+                            <tr th:each="u : ${usuarios}">
+                                <td class="ps-4 fw-bold text-secondary" th:text="'#' + ${u.id}">#1</td>
+                                
+                                <td>
+                                    <span class="fw-bold text-dark" th:text="${u.username}">usuario</span>
+                                </td>
+
+                                <td th:text="${u.nombreCompleto}">Nombre Completo</td>
+
+                                <!-- Rol -->
+                                <td class="text-center">
+                                    <span th:if="${u.rol != null and u.rol.nombre == 'ROLE_ADMINISTRADOR'}" 
+                                          class="badge text-white" 
+                                          style="background-color: #8b5cf6;">
+                                        <i class="bi bi-shield-lock-fill me-1"></i> <span th:text="${u.rol.nombreVisible}">Administrador</span>
+                                    </span>
+                                    <span th:if="${u.rol != null and u.rol.nombre == 'ROLE_ALMACENISTA'}" 
+                                          class="badge bg-warning text-dark">
+                                        <i class="bi bi-person-workspace me-1"></i> <span th:text="${u.rol.nombreVisible}">Almacenista</span>
+                                    </span>
+                                    <span th:if="${u.rol == null}" class="badge bg-secondary">Sin Rol</span>
+                                </td>
+
+                                <!-- Estado -->
+                                <td class="text-center">
+                                    <span th:if="${u.activo}" class="badge bg-success">
+                                        <i class="bi bi-check2-circle me-1"></i> Activo
+                                    </span>
+                                    <span th:unless="${u.activo}" class="badge bg-danger">
+                                        <i class="bi bi-dash-circle me-1"></i> Inactivo
+                                    </span>
+                                </td>
+
+                                <!-- Fecha Registro -->
+                                <td class="small text-muted" th:text="${#temporals.format(u.fechaRegistro, 'dd/MM/yyyy HH:mm')}">
+                                    27/08/2026 10:00
+                                </td>
+
+                                <!-- Acciones -->
+                                <td class="text-end pe-4">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <!-- Editar -->
+                                        <a th:href="@{/usuarios/editar/{id}(id=${u.id})}" 
+                                           class="btn btn-outline-secondary" 
+                                           title="Editar usuario">
+                                            <i class="bi bi-pencil-square me-1"></i> Editar
+                                        </a>
+
+                                        <!-- Desactivar (si está activo) -->
+                                        <form th:if="${u.activo}" 
+                                              th:action="@{/usuarios/estado/{id}(id=${u.id})}" 
+                                              method="post" 
+                                              class="d-inline"
+                                              onsubmit="return confirm('¿Está seguro de que desea desactivar esta cuenta de usuario?');">
+                                            <input type="hidden" name="activo" value="false"/>
+                                            <button type="submit" class="btn btn-outline-danger" title="Desactivar usuario">
+                                                <i class="bi bi-person-slash me-1"></i> Desactivar
+                                            </button>
+                                        </form>
+
+                                        <!-- Activar (si está inactivo) -->
+                                        <form th:unless="${u.activo}" 
+                                              th:action="@{/usuarios/estado/{id}(id=${u.id})}" 
+                                              method="post" 
+                                              class="d-inline"
+                                              onsubmit="return confirm('¿Desea reactivar esta cuenta de usuario?');">
+                                            <input type="hidden" name="activo" value="true"/>
+                                            <button type="submit" class="btn btn-outline-success" title="Activar usuario">
+                                                <i class="bi bi-person-check me-1"></i> Activar
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Pie de Página y Scripts -->
+    <footer th:replace="~{layout/base :: footer}"></footer>
+    <div th:replace="~{layout/base :: scripts}"></div>
+
+</body>
+</html>
