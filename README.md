@@ -240,4 +240,5 @@ BUILD SUCCESS
 - Solo el Administrador puede crear usuarios y asignar roles.
 - No existe registro publico de usuarios.
 #   i n v e n t a r i o - a l m a c e n  
+ #   i n v e n t a r i o - a l m a c e n  
  
